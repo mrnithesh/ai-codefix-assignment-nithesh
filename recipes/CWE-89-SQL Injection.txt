@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+Vulnerability: Attacker modifies or controls the structure of an application's database query by injecting SQL syntax via unvalidated user input.
+Recipe (Fix): ALWAYS use Parameterized Queries (Prepared Statements) or an Object-Relational Mapper (ORM) library that handles parameterization automatically. NEVER construct queries using string concatenation.

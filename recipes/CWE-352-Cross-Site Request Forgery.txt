@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-352: Cross-Site Request Forgery (CSRF)
+Vulnerability: An attacker tricks an authenticated victim's browser into sending an unintentional, malicious request to the vulnerable web application.
+Recipe (Fix): Use synchronizer tokens (CSRF tokens) or the SameSite=Strict/Lax cookie attribute on all state-changing HTTP methods (POST, PUT, DELETE). Check the Origin or Referer headers.

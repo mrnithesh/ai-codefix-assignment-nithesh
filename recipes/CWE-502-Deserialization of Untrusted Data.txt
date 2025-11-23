@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-502: Deserialization of Untrusted Data
+Vulnerability: The application converts untrusted data into an executable object, allowing an attacker to execute arbitrary code or trigger Denial of Service (DoS) conditions.
+Recipe (Fix): NEVER deserialize data from untrusted sources (e.g., client cookies, user files). Prefer safe, text-based data formats like JSON or YAML, and validate schemas strictly.

@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-306: Missing Authentication for Critical Function
+Vulnerability: An application fails to require any form of authentication before allowing access to a function that performs a critical action.
+Recipe (Fix): Ensure all endpoints that modify data, perform administrative actions, or access sensitive data are protected by an authentication check (e.g., FastAPI's dependency injection for API keys/tokens).

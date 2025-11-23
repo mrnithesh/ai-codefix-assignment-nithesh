@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+Vulnerability: Attacker executes arbitrary operating system commands by injecting special characters (like &, |, ;) into application input used by OS command functions.
+Recipe (Fix): AVOID calling OS commands directly if possible. If necessary, use safe, parameterized APIs (like Python's subprocess.run with shell=False) and strictly validate input against an allowlist.

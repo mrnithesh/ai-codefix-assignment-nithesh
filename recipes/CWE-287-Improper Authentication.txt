@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-287: Improper Authentication
+Vulnerability: An application fails to correctly verify the identity of a user, allowing attackers to bypass authentication or impersonate legitimate users.
+Recipe (Fix): Use robust, well-vetted libraries for all authentication processes. Enforce strong password policies, use multi-factor authentication (MFA), and implement proper session management.

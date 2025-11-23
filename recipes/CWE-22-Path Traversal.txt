@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+Vulnerability: Attacker uses special path sequences (e.g., ../) in input to access files and directories outside of the intended or restricted root folder.
+Recipe (Fix): Canonicalize the user-supplied path (resolve ../ sequences) and ensure the resulting path STARTS with the designated safe directory root, rejecting the request otherwise.

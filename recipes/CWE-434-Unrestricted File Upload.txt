@@ -1,0 +1,3 @@
+CWE ID & Name: CWE-434: Unrestricted Upload of File with Dangerous Type
+Vulnerability: The application allows an attacker to upload executable files (e.g., .php, .jsp, .sh) or files that can be misinterpreted by the server, leading to Remote Code Execution (RCE).
+Recipe (Fix): Validate file extension (allowlist ONLY safe types like .jpg, .pdf). DO NOT rely on client-provided MIME type. Store files outside the web root, and rename them to prevent execution.
