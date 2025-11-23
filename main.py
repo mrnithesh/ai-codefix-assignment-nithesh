@@ -9,6 +9,7 @@ import json
 import re
 import logging
 import torch
+from rag import RAGComponent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,14 @@ load_dotenv()
 MODEL_NAME = os.getenv("MODEL_NAME")
 
 app = FastAPI()
+
+# Initialize RAG Retriever
+try:
+    retriever = RAGComponent()
+    logger.info("RAGComponent initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize RAGComponent: {e}")
+    retriever = None
 
 try:
     logger.info(f"Loading model: {MODEL_NAME}")
@@ -43,23 +52,23 @@ try:
     )
     
     # Log device information after loading
-    try:
-        device_info = {}
-        if hasattr(model, 'hf_device_map'):
-            device_info = model.hf_device_map
-            logger.info(f"Model device map: {device_info}")
-        else:
-            # Try to get device from model parameters
-            try:
-                device = next(model.parameters()).device
-                logger.info(f"Model device: {device}")
-                if device.type == 'cuda':
-                    logger.info(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024**3:.2f} GB")
-                    logger.info(f"GPU memory reserved: {torch.cuda.memory_reserved(device) / 1024**3:.2f} GB")
-            except StopIteration:
-                logger.warning("Could not determine model device")
-    except Exception as e:
-        logger.warning(f"Could not get device info: {str(e)}")
+    # try:
+    #     device_info = {}
+    #     if hasattr(model, 'hf_device_map'):
+    #         device_info = model.hf_device_map
+    #         logger.info(f"Model device map: {device_info}")
+    #     else:
+    #         # Try to get device from model parameters
+    #         try:
+    #             device = next(model.parameters()).device
+    #             logger.info(f"Model device: {device}")
+    #             if device.type == 'cuda':
+    #                 logger.info(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024**3:.2f} GB")
+    #                 logger.info(f"GPU memory reserved: {torch.cuda.memory_reserved(device) / 1024**3:.2f} GB")
+    #         except StopIteration:
+    #             logger.warning("Could not determine model device")
+    # except Exception as e:
+    #     logger.warning(f"Could not get device info: {str(e)}")
     
     logger.info(f"Model loaded successfully")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=CACHE_DIR)
@@ -94,7 +103,18 @@ async def root():
 async def fix_code(input: Input):
     logger.info(f"Received request to fix code: {input}")
     try:
-        system_prompt = """You are an expert security code remediation assistant specializing in fixing software vulnerabilities.
+        # Retrieve relevant recipe
+        retrieved_context = ""
+        if retriever:
+            query = f"{input.cwe} {input.language} {input.code[:300]}"
+            recipes = retriever.retrieve(query, k=1)
+            if recipes:
+                retrieved_context = recipes[0]
+                logger.info(f"Retrieved relevant security recipe: {retrieved_context[:100]}...") 
+            else:
+                logger.warning("No relevant security recipe found")
+
+        system_prompt = f"""You are an expert security code remediation assistant specializing in fixing software vulnerabilities.
 
 Your task is to analyze vulnerable code and provide secure fixes. You must respond ONLY with valid in this format:
 [FIXED_CODE_START]
@@ -104,6 +124,10 @@ Your task is to analyze vulnerable code and provide secure fixes. You must respo
 <a clear explanation of the vulnerability and how the fix addresses it>
 [EXPLANATION_END]
 Do not forget the opening markers [FIXED_CODE_START] and [EXPLANATION_START] and closing markers [FIXED_CODE_END] and [EXPLANATION_END].
+
+Reference Security Recipe:
+{retrieved_context}
+
 Rules:
 
 - Do not add any text outside these markers.
