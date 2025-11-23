@@ -68,6 +68,17 @@ except Exception as e:
     logger.error(f"Failed to load model: {str(e)}")
     raise RuntimeError(f"Failed to load model: {str(e)}")
 
+def extract_between(text: str, start: str, end: str) -> str:
+    s = text.find(start)
+    if s == -1:
+        return ""
+    s += len(start)
+    e = text.find(end, s)
+    if e == -1:
+        # If no end marker, take until end of text
+        return text[s:].strip()
+    return text[s:e].strip()
+
 @app.get("/")
 async def root():
     return {
@@ -85,26 +96,30 @@ async def fix_code(input: Input):
     try:
         system_prompt = """You are an expert security code remediation assistant specializing in fixing software vulnerabilities.
 
-Your task is to analyze vulnerable code and provide secure fixes. You must respond ONLY with valid JSON in the following format:
-{
-    "fixed_code": "<the complete fixed code snippet>",
-    "explanation": "<a clear explanation of the vulnerability and how the fix addresses it>"
-}
+Your task is to analyze vulnerable code and provide secure fixes. You must respond ONLY with valid in this format:
+[FIXED_CODE_START]
+<the complete fixed code snippet only>
+[FIXED_CODE_END]
+[EXPLANATION_START]
+<a clear explanation of the vulnerability and how the fix addresses it>
+[EXPLANATION_END]
+Do not forget the opening markers [FIXED_CODE_START] and [EXPLANATION_START] and closing markers [FIXED_CODE_END] and [EXPLANATION_END].
+Rules:
 
-Important:
-- Return ONLY the JSON object, no markdown code blocks, no additional text
-- The fixed_code must be complete and syntactically correct
+- Do not add any text outside these markers.
+- Do not wrap code in markdown fences inside the fixed code block.
+- The fixed code must be complete and syntactically correct.
 - The explanation should reference the CWE and explain the security issue"""
         
         user_message = f"""Language: {input.language}
 CWE: {input.cwe}
 
 Vulnerable Code:
-```{input.language}
+[VULNERABLE_CODE_START]
 {input.code}
-```
+[VULNERABLE_CODE_END]
 
-Please provide the fixed code and explanation in JSON format."""
+Please provide the fixed code and explanation."""
         
         message = [
             {"role": "system", "content": system_prompt},
@@ -148,28 +163,23 @@ Please provide the fixed code and explanation in JSON format."""
         logger.info(f"Raw model response: {response_text}")
         print(f"Raw model response: {response_text}")
         
-        # Parse JSON from response
-        json_text = response_text.strip()
-        # Remove markdown code blocks if present
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', json_text, re.DOTALL)
-        if json_match:
-            json_text = json_match.group(1)
-        else:
-            # Try to extract JSON object directly
-            json_match = re.search(r'\{.*\}', json_text, re.DOTALL)
-            if json_match:
-                json_text = json_match.group(0)
-        # Parse JSON
-        try:
-            parsed_response = json.loads(json_text)
-            fixed_code = parsed_response.get("fixed_code", "")
-            explanation = parsed_response.get("explanation", "")
-        except json.JSONDecodeError as e:
+        
+        fixed_code = extract_between(
+                response_text,
+                "[FIXED_CODE_START]",
+                "[FIXED_CODE_END]",
+            )
+        explanation = extract_between(
+            response_text,
+            "[EXPLANATION_START]",
+            "[EXPLANATION_END]",
+        )
+
+        if not fixed_code or not explanation:
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to parse JSON from model response: {str(e)}. Raw response: {response_text[:200]}"
+                detail=f"Model did not return output in the expected format. Raw response: {response_text[:200]}"
             )
-        logger.info(f"JSON parsed successfully")
         # Generate diff using difflib
         original_lines = input.code.splitlines(keepends=True)
         fixed_lines = fixed_code.splitlines(keepends=True)
