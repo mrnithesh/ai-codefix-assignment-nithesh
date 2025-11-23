@@ -1,7 +1,6 @@
 import os
 import logging
 from typing import List, Dict
-import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 

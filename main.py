@@ -5,8 +5,6 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
 import difflib
-import json
-import re
 import logging
 import torch
 from rag import RAGComponent
