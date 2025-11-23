@@ -123,7 +123,21 @@ The system uses a "Mini-RAG" approach:
 *   **Latency**: On consumer-grade CPUs, inference may be slower due to the lack of quantization. Using a GPU significantly reduces this latency.
 *   **Future Optimization**: Performance on CPU-only environments could be drastically improved by switching to a quantized model format (e.g., GGUF via `llama.cpp` or 4-bit loading via `bitsandbytes`). However, `bitsandbytes` support on Windows CPU is limited and experimental, hence the choice for the stable unquantized approach for this assignment.
 
-### Limitations
+### Assumptions and Limitations
+
+#### ⚠️ **Assumption on Model Choice and Performance**
+
+To adhere strictly to the **Mandatory Requirements** for **CPU-only inference** and the listed inference libraries, I was required to use the standard **Hugging Face Transformers** library.
+
+1.  **Inference Library Constraint:** The recommended high-performance GPU libraries like **vLLM** lack official, stable native Windows support, and CPU-optimized quantization formats (e.g., GGUF via `llama.cpp`) were not listed as a primary choice.
+
+2.  **Quantization Constraint:** Standard quantization techniques used with Hugging Face (like `bitsandbytes`, AWQ) are primarily designed for and dependent on **GPU hardware (CUDA kernels)** and **do not support efficient pure CPU inference**.
+
+Therefore, I made the necessary assumption to deploy a **non-quantized (e.g., FP32 or BF16) model** using the standard `Hugging Face transformers` pipeline for guaranteed CPU compatibility.
+
+**Performance Impact:** Running a non-quantized model of this size on a CPU-only environment results in significantly **reduced token-per-second throughput** and **higher memory consumption** compared to a GPU-accelerated or a `llama.cpp`/GGUF optimized setup. The reported `latency_ms` and observations in this README reflect this expected performance penalty.
+
+#### Other Limitations
 *   The current RAG corpus is limited to a few example recipes.
 *   The 1.5B model may occasionally hallucinate on very complex or obscure libraries.
 
